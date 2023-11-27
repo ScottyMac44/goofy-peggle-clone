@@ -1,0 +1,13 @@
+[game]
+title = "Peggel"
+resolution = [960, 720]
+fps = 144
+
+[physics]
+initial_speed = 12
+gravity = 0.1
+
+[objects]
+ball_size = 20
+peg_size = 10
+points = 10

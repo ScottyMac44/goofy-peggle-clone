@@ -1,35 +1,102 @@
+from modules.physicsObjects import Ball, BallTrajectory
+from modules.pegLoader import all_pegs
 import pygame
-from physicsObjects import Ball
+import toml
 
+
+# Load config
+config_file_path = "./config.toml"
+with open(config_file_path, "r") as f:
+    config = toml.load(f)["game"]
+
+# Set config values
+title = config["title"]
+resolution = config["resolution"]
+fps = config["fps"]
+
+# Initialize pygame
 pygame.init()
+pygame.display.set_caption(title)
+screen = pygame.display.set_mode(resolution)
 
-screen = pygame.display.set_mode((960,720))
+# Initialize physics objects
+ball = Ball(screen)
+trajectory = BallTrajectory(screen)
 
-pygame.display.set_caption("Goofy ass peggle clone")
-
-app_running = True
-deltatime = 0.0
+# Initialize clock and collision cooldown 
 clock = pygame.time.Clock()
+ball_collision_cooldown = 0
+peg_collision_cooldown = 0
+collision_cooldown_limit = 10
 
-bouncy_ball = Ball(screen, "assets/ball.png", 15, [5,5], [20,20])
+# Start game
+app_running = True
 
+# Main event loop
 while app_running:
-    mouse_pos = pygame.mouse.get_pos()
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             app_running = False
 
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not ball.is_moving:
+            ball.start_physics()
+            
     screen.fill((50,50,50))
+    # Use collision cooldown
+    '''
+    if ball.is_moving:     
+        ball.move()
+        
+        # Collision cooldown logic
+        if ball.has_collided and ball_collision_cooldown == 0:
+            ball.has_collided = False
+            ball_collision_cooldown = collision_cooldown_limit
 
-    bouncy_ball.move()
-    bouncy_ball.check_collision()
-    bouncy_ball.draw()
+        if ball_collision_cooldown > 0:
+            ball_collision_cooldown -= 1
+            
+        
+        for peg in all_pegs:
+            if peg.has_collided and peg_collision_cooldown == 0:
+                peg.has_collided = False
+                peg_collision_cooldown = collision_cooldown_limit
 
-    # delta_time = 0.001 * clock.tick(144)
+            if peg_collision_cooldown > 0:
+                peg_collision_cooldown -= 1
 
-    clock.tick(60)
+            if not peg.has_collided:
+                peg.check_collision(ball, all_pegs)
 
+        ball.check_collision()
+
+    else:
+        trajectory.update_trajectory(all_pegs)
+        trajectory.draw_trajectory(screen)
+
+        for peg in all_pegs:
+            if peg.is_hit:
+                peg.kill()
+    '''
+    # No use of collision cooldown
+    if ball.is_moving:
+        ball.move()
+        ball.check_collision()
+
+        for peg in all_pegs:
+            peg.check_collision(ball, all_pegs)
+    else:
+        trajectory.update_trajectory(all_pegs)
+        trajectory.draw_trajectory(screen)
+
+        for peg in all_pegs:
+            if peg.is_hit:
+                peg.kill()
+                
+    ball.draw()
+    all_pegs.draw(screen)
+        
+    #clock.tick(10)
+    clock.tick(fps)
     pygame.display.flip()
-    
+
 pygame.quit()
